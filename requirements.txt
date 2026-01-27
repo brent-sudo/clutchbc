@@ -3,3 +3,5 @@ pypdf
 cryptography
 gunicorn
 Pillow
+pytesseract
+pdf2image

@@ -19,9 +19,13 @@ try:
     import pytesseract
     from pdf2image import convert_from_path
     from PIL import Image
-    pytesseract.pytesseract.tesseract_cmd = '/opt/homebrew/bin/tesseract'
-    # Add Homebrew bin to PATH for poppler tools
-    os.environ['PATH'] = '/opt/homebrew/bin:' + os.environ.get('PATH', '')
+    # Set Tesseract path based on platform
+    import platform
+    if platform.system() == 'Darwin':  # macOS
+        pytesseract.pytesseract.tesseract_cmd = '/opt/homebrew/bin/tesseract'
+        os.environ['PATH'] = '/opt/homebrew/bin:' + os.environ.get('PATH', '')
+    else:  # Linux (production)
+        pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
     OCR_AVAILABLE = True
 except ImportError:
     OCR_AVAILABLE = False
