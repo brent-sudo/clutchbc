@@ -1,0 +1,14 @@
+# Ignore uploaded files and personal documents
+uploads/
+# Ignore test PDFs but keep the template
+APV9T_Filled_*.pdf
+*registration*.pdf
+*Insurance*.pdf
+
+# Python
+__pycache__/
+*.pyc
+.env
+
+# macOS
+.DS_Store

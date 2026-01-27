@@ -1,0 +1,6 @@
+flask
+pypdf
+cryptography
+pytesseract
+pdf2image
+Pillow

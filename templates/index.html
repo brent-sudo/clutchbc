@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APV9T Form Filler - Clutch</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 40px 20px;
+            color: #333;
+        }
+        .container { max-width: 520px; margin: 0 auto; }
+        .logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .logo img {
+            height: 40px;
+        }
+        .logo-text {
+            font-size: 32px;
+            font-weight: 700;
+            color: #F95757;
+            letter-spacing: -1px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 8px;
+            color: #222;
+            font-size: 24px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 15px;
+        }
+        .upload-box {
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            padding: 30px 25px;
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .upload-icon { font-size: 40px; margin-bottom: 10px; text-align: center; }
+        .upload-text {
+            font-size: 15px;
+            color: #666;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 18px;
+        }
+        .form-label {
+            display: block;
+            color: #444;
+            font-weight: 500;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+        .optional {
+            color: #999;
+            font-weight: 400;
+        }
+        .text-input {
+            padding: 10px 12px;
+            font-size: 15px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            background: #fafafa;
+            width: 100%;
+        }
+        .text-input:focus {
+            outline: none;
+            border-color: #F95757;
+            background: #fff;
+        }
+        .text-input-short {
+            width: 140px;
+        }
+        .radio-group {
+            display: flex;
+            gap: 20px;
+            margin-top: 6px;
+        }
+        .radio-group label {
+            color: #555;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .checkbox-group {
+            background: #fafafa;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-bottom: 18px;
+        }
+        .checkbox-group .form-label {
+            margin-bottom: 10px;
+        }
+        .checkbox-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 15px;
+        }
+        .checkbox-options label {
+            color: #555;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .yes-no-group {
+            background: #fafafa;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-bottom: 12px;
+        }
+        .yes-no-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+        }
+        .yes-no-row:not(:last-child) {
+            border-bottom: 1px solid #eee;
+        }
+        .yes-no-label {
+            color: #444;
+            font-size: 14px;
+        }
+        .yes-no-options {
+            display: flex;
+            gap: 15px;
+        }
+        .yes-no-options label {
+            color: #555;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .upload-btn {
+            display: block;
+            width: 100%;
+            padding: 14px 40px;
+            background: #F95757;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .upload-btn:hover {
+            background: #e04a4a;
+        }
+        .footer {
+            margin-top: 25px;
+            padding: 15px;
+            background: #fff;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #666;
+            border: 1px solid #eee;
+        }
+        .footer strong { color: #444; }
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            background: #fafafa;
+            border: 1px dashed #ccc;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <img src="/static/clutch-logo.png" alt="Clutch">
+        </div>
+        <h1>APV9T Form Filler</h1>
+        <p class="subtitle">Upload Vehicle Ownership to auto-fill transfer form</p>
+
+        <div class="upload-box">
+            <div class="upload-icon">📄</div>
+            <p class="upload-text">Upload Vehicle Ownership</p>
+
+            <form id="uploadForm" enctype="multipart/form-data">
+                <input type="file" name="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png" required>
+
+                <div style="display: flex; gap: 15px; margin-bottom: 18px;">
+                    <div style="flex: 1;">
+                        <label class="form-label">Date of Sale:</label>
+                        <input type="date" name="sale_date" id="sale_date" class="text-input">
+                    </div>
+                    <div style="flex: 1;">
+                        <label class="form-label">Selling Price <span class="optional">(optional)</span></label>
+                        <input type="text" name="selling_price" placeholder="$ e.g. 25000" class="text-input">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label class="form-label">Odometer <span class="optional">(optional)</span></label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="text" name="odometer" placeholder="e.g. 85000" class="text-input" style="width: 120px; margin: 0;">
+                        <label style="color: #555; font-size: 14px;"><input type="radio" name="odometer_unit" value="km" checked> km</label>
+                        <label style="color: #555; font-size: 14px;"><input type="radio" name="odometer_unit" value="miles"> miles</label>
+                    </div>
+                </div>
+
+                <div class="checkbox-group">
+                    <label class="form-label">Previous Vehicle History <span class="optional">(optional)</span></label>
+                    <div class="checkbox-options">
+                        <label><input type="checkbox" name="prev_history" value="none"> None</label>
+                        <label><input type="checkbox" name="prev_history" value="rebuilt"> Rebuilt</label>
+                        <label><input type="checkbox" name="prev_history" value="salvage"> Salvage</label>
+                        <label><input type="checkbox" name="prev_history" value="nonrepairable"> Non-repairable</label>
+                        <label><input type="checkbox" name="prev_history" value="irreparable"> Irreparable</label>
+                    </div>
+                </div>
+
+                <div class="checkbox-group">
+                    <label class="form-label">Previously Registered Outside BC <span class="optional">(optional)</span></label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="outside_bc" value="yes"> Yes</label>
+                        <label><input type="radio" name="outside_bc" value="no"> No</label>
+                    </div>
+                </div>
+
+                <div class="yes-no-group">
+                    <label class="form-label">Vehicle Damage Disclosure <span class="optional">(optional)</span></label>
+                    <div class="yes-no-row">
+                        <span class="yes-no-label">New vehicle damage exceeds 20%?</span>
+                        <div class="yes-no-options">
+                            <label><input type="radio" name="new_damage_20" value="yes"> Yes</label>
+                            <label><input type="radio" name="new_damage_20" value="no"> No</label>
+                        </div>
+                    </div>
+                    <div class="yes-no-row">
+                        <span class="yes-no-label">Used vehicle over $2,000 damage?</span>
+                        <div class="yes-no-options">
+                            <label><input type="radio" name="used_damage_2k" value="yes"> Yes</label>
+                            <label><input type="radio" name="used_damage_2k" value="no"> No</label>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="upload-btn" id="submitBtn">Fill APV9T Form</button>
+            </form>
+
+            <div id="warningBox" style="display:none; margin-top: 20px; padding: 15px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; text-align: left;">
+                <strong style="color: #856404;">⚠️ Could not read these fields - please fill in:</strong>
+                <div id="missingFieldsForm" style="margin: 15px 0;"></div>
+                <button id="downloadBtn" class="upload-btn" style="background: #28a745;">Generate PDF with Updates</button>
+            </div>
+
+            <div id="successBox" style="display:none; margin-top: 20px; padding: 15px; background: #d4edda; border: 1px solid #28a745; border-radius: 8px;">
+                <strong style="color: #155724;">✓ All fields extracted successfully!</strong><br><br>
+                <button id="downloadBtnSuccess" class="upload-btn" style="background: #28a745;">Download PDF</button>
+            </div>
+
+            <script>
+                document.getElementById('sale_date').valueAsDate = new Date();
+
+                document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+                    e.preventDefault();
+
+                    const submitBtn = document.getElementById('submitBtn');
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Processing...';
+
+                    document.getElementById('warningBox').style.display = 'none';
+                    document.getElementById('successBox').style.display = 'none';
+
+                    const formData = new FormData(this);
+
+                    try {
+                        const response = await fetch('/process-check', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        const result = await response.json();
+
+                        if (result.error) {
+                            alert(result.error);
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = 'Fill APV9T Form';
+                            return;
+                        }
+
+                        if (result.missing_fields && result.missing_fields.length > 0) {
+                            const missingForm = document.getElementById('missingFieldsForm');
+                            const fieldMap = {
+                                'VIN': 'vin',
+                                'Registration Number': 'registration_number',
+                                'Year': 'year',
+                                'Make': 'make',
+                                'Model': 'model',
+                                'Colour': 'colour',
+                                'Body Style': 'body_style',
+                                'Net Weight': 'net_weight',
+                                'Owner Name': 'owner_name',
+                                'Owner Street Address': 'owner_street',
+                                'Owner City': 'owner_city',
+                                'Owner Postal Code': 'owner_postal'
+                            };
+
+                            missingForm.innerHTML = result.missing_fields.map(f => {
+                                const fieldId = fieldMap[f] || f.toLowerCase().replace(/ /g, '_');
+                                return '<div style="margin-bottom: 10px;">' +
+                                    '<label style="display: block; color: #856404; font-weight: 500; margin-bottom: 4px;">' + f + ':</label>' +
+                                    '<input type="text" id="manual_' + fieldId + '" class="text-input" style="width: 100%;" placeholder="Enter ' + f + '">' +
+                                    '</div>';
+                            }).join('');
+
+                            document.getElementById('warningBox').style.display = 'block';
+
+                            document.getElementById('downloadBtn').onclick = async function() {
+                                // Collect manual field values
+                                const manualData = {};
+                                result.missing_fields.forEach(f => {
+                                    const fieldId = fieldMap[f] || f.toLowerCase().replace(/ /g, '_');
+                                    const input = document.getElementById('manual_' + fieldId);
+                                    if (input && input.value.trim()) {
+                                        manualData[fieldId] = input.value.trim();
+                                    }
+                                });
+
+                                // Send manual data to update the PDF
+                                const updateResponse = await fetch('/update-pdf', {
+                                    method: 'POST',
+                                    headers: {'Content-Type': 'application/json'},
+                                    body: JSON.stringify({
+                                        download_url: result.download_url,
+                                        manual_fields: manualData
+                                    })
+                                });
+
+                                const updateResult = await updateResponse.json();
+                                if (updateResult.download_url) {
+                                    window.location.href = updateResult.download_url;
+                                } else {
+                                    window.location.href = result.download_url;
+                                }
+                            };
+                        } else {
+                            document.getElementById('successBox').style.display = 'block';
+                            document.getElementById('downloadBtnSuccess').onclick = function() {
+                                window.location.href = result.download_url;
+                            };
+                        }
+
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Fill APV9T Form';
+
+                    } catch (err) {
+                        alert('Error: ' + err.message);
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Fill APV9T Form';
+                    }
+                });
+            </script>
+        </div>
+
+        <div class="footer">
+            <strong>Purchaser (auto-filled):</strong><br>
+            Clutch Technologies Inc<br>
+            1735-4311 Hazelbridge Way, Richmond BC V6X 3L7<br>
+            Dealer Reg: D50035
+        </div>
+    </div>
+</body>
+</html>
