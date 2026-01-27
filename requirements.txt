@@ -1,6 +1,5 @@
 flask
 pypdf
 cryptography
-pytesseract
-pdf2image
+gunicorn
 Pillow
