@@ -431,6 +431,31 @@ def index():
     return render_template('index.html')
 
 
+@app.route('/health')
+def health():
+    """Diagnostic endpoint to check system status."""
+    import traceback
+    status = {
+        'app': 'running',
+        'ocr_available': OCR_AVAILABLE,
+        'upload_folder': str(app.config['UPLOAD_FOLDER']),
+        'template_exists': APV9T_TEMPLATE.exists(),
+        'template_path': str(APV9T_TEMPLATE),
+    }
+
+    # Test if upload folder is writable
+    try:
+        test_file = app.config['UPLOAD_FOLDER'] / 'test_write.txt'
+        test_file.write_text('test')
+        test_file.unlink()
+        status['upload_writable'] = True
+    except Exception as e:
+        status['upload_writable'] = False
+        status['upload_error'] = str(e)
+
+    return jsonify(status)
+
+
 @app.route('/upload', methods=['POST'])
 def upload():
     if 'file' not in request.files:
@@ -447,7 +472,11 @@ def upload():
     # Save uploaded file
     filename = secure_filename(file.filename)
     upload_path = app.config['UPLOAD_FOLDER'] / filename
-    file.save(str(upload_path))
+
+    try:
+        file.save(str(upload_path))
+    except Exception as e:
+        return jsonify({'error': f'Failed to save file: {str(e)}'}), 500
 
     try:
         # Extract data from APV250
@@ -474,7 +503,8 @@ def upload():
         })
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        import traceback
+        return jsonify({'error': str(e), 'details': traceback.format_exc()}), 500
 
 
 @app.route('/download/<filename>')
@@ -571,7 +601,11 @@ def process_check():
     # Save uploaded file
     filename = secure_filename(file.filename)
     upload_path = app.config['UPLOAD_FOLDER'] / filename
-    file.save(str(upload_path))
+
+    try:
+        file.save(str(upload_path))
+    except Exception as e:
+        return jsonify({'error': f'Failed to save file: {str(e)}'}), 500
 
     try:
         # Extract data
@@ -642,7 +676,11 @@ def process():
     # Save uploaded file
     filename = secure_filename(file.filename)
     upload_path = app.config['UPLOAD_FOLDER'] / filename
-    file.save(str(upload_path))
+
+    try:
+        file.save(str(upload_path))
+    except Exception as e:
+        return jsonify({'error': f'Failed to save file: {str(e)}'}), 500
 
     try:
         # Extract data from APV250
