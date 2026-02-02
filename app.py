@@ -32,7 +32,13 @@ except ImportError:
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
-app.config['UPLOAD_FOLDER'] = Path(__file__).parent / 'uploads'
+
+# Use /tmp for uploads in production (writable), local folder for development
+import tempfile
+if os.environ.get('RENDER'):
+    app.config['UPLOAD_FOLDER'] = Path(tempfile.gettempdir()) / 'apv9t_uploads'
+else:
+    app.config['UPLOAD_FOLDER'] = Path(__file__).parent / 'uploads'
 app.config['UPLOAD_FOLDER'].mkdir(exist_ok=True)
 
 # Path to APV9T template

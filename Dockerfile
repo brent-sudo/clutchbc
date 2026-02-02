@@ -19,6 +19,9 @@ COPY . .
 # Create uploads directory
 RUN mkdir -p uploads
 
+# Set environment variable for Render detection
+ENV RENDER=true
+
 # Expose port
 EXPOSE 10000
 
