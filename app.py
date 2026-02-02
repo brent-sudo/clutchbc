@@ -57,6 +57,7 @@ PURCHASER = {
 
 def extract_apv250_data(file_path: str) -> dict:
     """Extract vehicle and owner data from APV250 PDF or image."""
+    import gc  # For memory management
     file_lower = file_path.lower()
 
     # Handle image files directly with OCR
@@ -64,10 +65,16 @@ def extract_apv250_data(file_path: str) -> dict:
         if not OCR_AVAILABLE:
             return {}
         image = Image.open(file_path)
+        # Resize large images to save memory (max 1500px wide)
+        if image.width > 1500:
+            ratio = 1500 / image.width
+            image = image.resize((1500, int(image.height * ratio)), Image.LANCZOS)
         # Try multiple OCR modes and combine results for better accuracy
         text = pytesseract.image_to_string(image)
         text_psm6 = pytesseract.image_to_string(image, config='--psm 6')
         text = text + "\n" + text_psm6  # Combine both for better field coverage
+        del image  # Free memory
+        gc.collect()
     else:
         # Handle PDF files
         reader = PdfReader(file_path)
@@ -77,12 +84,18 @@ def extract_apv250_data(file_path: str) -> dict:
             if page_text:
                 text += page_text + "\n"
 
-        # If no text extracted (scanned PDF), try OCR
+        # If no text extracted (scanned PDF), try OCR with lower DPI to save memory
         if len(text.strip()) < 50 and OCR_AVAILABLE:
             text = ""
-            images = convert_from_path(file_path, dpi=300)
+            # Use 150 DPI instead of 300 - still readable, uses 75% less memory
+            # Only process first page (registrations are single page)
+            images = convert_from_path(file_path, dpi=150, first_page=1, last_page=1)
             for image in images:
                 text += pytesseract.image_to_string(image) + "\n"
+                text += pytesseract.image_to_string(image, config='--psm 6') + "\n"
+                del image  # Free memory immediately
+            del images
+            gc.collect()
 
     data = {}
 
