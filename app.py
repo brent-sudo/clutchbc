@@ -64,15 +64,33 @@ def extract_apv250_data(file_path: str) -> dict:
     if file_lower.endswith(('.jpg', '.jpeg', '.png')):
         if not OCR_AVAILABLE:
             return {}
+        from PIL import ImageOps
         image = Image.open(file_path)
+        # Fix EXIF orientation (phone photos are often stored rotated)
+        image = ImageOps.exif_transpose(image)
         # Resize large images to save memory (max 1500px wide)
         if image.width > 1500:
             ratio = 1500 / image.width
             image = image.resize((1500, int(image.height * ratio)), Image.LANCZOS)
-        # Try multiple OCR modes and combine results for better accuracy
-        text = pytesseract.image_to_string(image)
-        text_psm6 = pytesseract.image_to_string(image, config='--psm 6')
-        text = text + "\n" + text_psm6  # Combine both for better field coverage
+
+        # Auto-rotation: try different angles and pick the one that finds key fields
+        best_text = ""
+        for rotation in [0, 90, 270, 180]:  # Try most common rotations first
+            rotated = image.rotate(rotation, expand=True) if rotation != 0 else image
+            text = pytesseract.image_to_string(rotated)
+            # Check if we found key vehicle document fields
+            if 'VIN' in text.upper() or 'REGISTRATION' in text.upper() or 'VEHICLE' in text.upper():
+                # Found good orientation - do full OCR
+                text_psm6 = pytesseract.image_to_string(rotated, config='--psm 6')
+                best_text = text + "\n" + text_psm6
+                break
+            # Keep track of text with most content as fallback
+            if len(text) > len(best_text):
+                best_text = text
+            if rotation != 0:
+                del rotated
+
+        text = best_text
         del image  # Free memory
         gc.collect()
     else:
