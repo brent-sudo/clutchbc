@@ -5,3 +5,6 @@ gunicorn
 Pillow
 pytesseract
 pdf2image
+authlib
+requests
+python-dotenv

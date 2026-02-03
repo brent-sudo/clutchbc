@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>APV9T Form Filler - Clutch</title>
+    <title>APV9T Auto Fill - Clutch</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -180,10 +180,13 @@
 </head>
 <body>
     <div class="container">
-        <div class="logo">
-            <img src="/static/clutch-logo.png" alt="Clutch">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div class="logo" style="margin-bottom: 0;">
+                <img src="/static/clutch-logo.png" alt="Clutch">
+            </div>
+            <a href="/settings" style="color: #666; text-decoration: none; font-size: 14px;">Settings</a>
         </div>
-        <h1>APV9T Form Filler</h1>
+        <h1>APV9T Auto Fill</h1>
         <p class="subtitle">Upload Vehicle Ownership to auto-fill transfer form</p>
 
         <div class="upload-box">
@@ -253,6 +256,17 @@
                 <button type="submit" class="upload-btn" id="submitBtn">Fill APV9T Form</button>
             </form>
 
+            <div id="progressBox" style="display:none; margin-top: 20px; padding: 15px; background: #e3f2fd; border: 1px solid #90caf9; border-radius: 8px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                    <div class="spinner" style="width: 20px; height: 20px; border: 3px solid #90caf9; border-top-color: #1976d2; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                    <strong style="color: #1565c0;" id="progressText">Uploading file...</strong>
+                </div>
+                <div style="background: #bbdefb; border-radius: 4px; height: 6px; overflow: hidden;">
+                    <div id="progressBar" style="background: #1976d2; height: 100%; width: 0%; transition: width 0.3s;"></div>
+                </div>
+                <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+            </div>
+
             <div id="warningBox" style="display:none; margin-top: 20px; padding: 15px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; text-align: left;">
                 <strong style="color: #856404;">⚠️ Could not read these fields - please fill in:</strong>
                 <div id="missingFieldsForm" style="margin: 15px 0;"></div>
@@ -272,25 +286,41 @@
 
                     const submitBtn = document.getElementById('submitBtn');
                     submitBtn.disabled = true;
-                    submitBtn.textContent = 'Processing...';
+                    submitBtn.style.display = 'none';
 
                     document.getElementById('warningBox').style.display = 'none';
                     document.getElementById('successBox').style.display = 'none';
 
+                    // Show progress indicator
+                    const progressBox = document.getElementById('progressBox');
+                    const progressText = document.getElementById('progressText');
+                    const progressBar = document.getElementById('progressBar');
+                    progressBox.style.display = 'block';
+
                     const formData = new FormData(this);
 
+                    // Simulate progress steps
+                    progressText.textContent = 'Uploading file...';
+                    progressBar.style.width = '20%';
+
                     try {
+                        setTimeout(() => { progressText.textContent = 'Extracting text...'; progressBar.style.width = '40%'; }, 500);
+                        setTimeout(() => { progressText.textContent = 'Reading vehicle data...'; progressBar.style.width = '60%'; }, 1500);
+                        setTimeout(() => { progressText.textContent = 'Generating PDF...'; progressBar.style.width = '80%'; }, 2500);
+
                         const response = await fetch('/process-check', {
                             method: 'POST',
                             body: formData
                         });
 
+                        progressBar.style.width = '100%';
                         const result = await response.json();
 
                         if (result.error) {
                             alert(result.error);
+                            progressBox.style.display = 'none';
                             submitBtn.disabled = false;
-                            submitBtn.textContent = 'Fill APV9T Form';
+                            submitBtn.style.display = 'block';
                             return;
                         }
 
@@ -356,13 +386,15 @@
                             };
                         }
 
+                        progressBox.style.display = 'none';
                         submitBtn.disabled = false;
-                        submitBtn.textContent = 'Fill APV9T Form';
+                        submitBtn.style.display = 'block';
 
                     } catch (err) {
                         alert('Error: ' + err.message);
+                        progressBox.style.display = 'none';
                         submitBtn.disabled = false;
-                        submitBtn.textContent = 'Fill APV9T Form';
+                        submitBtn.style.display = 'block';
                     }
                 });
             </script>

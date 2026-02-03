@@ -7,12 +7,16 @@ Supports both digital and scanned PDFs (via OCR).
 
 import os
 import re
+import json
+import sqlite3
 from datetime import datetime
 from pathlib import Path
+from functools import wraps
 
-from flask import Flask, render_template, request, send_file, jsonify
+from flask import Flask, render_template, request, send_file, jsonify, redirect, url_for, session
 from pypdf import PdfReader, PdfWriter
 from werkzeug.utils import secure_filename
+from authlib.integrations.flask_client import OAuth
 
 # OCR support for scanned PDFs and images
 try:
@@ -32,27 +36,103 @@ except ImportError:
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
+app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+
+# Google OAuth setup
+oauth = OAuth(app)
+google = oauth.register(
+    name='google',
+    client_id=os.environ.get('GOOGLE_CLIENT_ID'),
+    client_secret=os.environ.get('GOOGLE_CLIENT_SECRET'),
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    client_kwargs={'scope': 'openid email profile'},
+)
 
 # Use /tmp for uploads in production (writable), local folder for development
 import tempfile
 if os.environ.get('RENDER'):
     app.config['UPLOAD_FOLDER'] = Path(tempfile.gettempdir()) / 'apv9t_uploads'
+    DB_PATH = Path(tempfile.gettempdir()) / 'apv9t_settings.db'
 else:
     app.config['UPLOAD_FOLDER'] = Path(__file__).parent / 'uploads'
+    DB_PATH = Path(__file__).parent / 'settings.db'
 app.config['UPLOAD_FOLDER'].mkdir(exist_ok=True)
 
 # Path to APV9T template
 APV9T_TEMPLATE = Path(__file__).parent / 'APV9T Form.pdf'
 
-# Purchaser info (always Clutch Technologies Inc)
-PURCHASER = {
-    "name": "Clutch Technologies Inc",
+# Default settings (used if database is empty)
+DEFAULT_SETTINGS = {
+    "company_name": "Clutch Technologies Inc",
     "street": "1735-4311 Hazelbridge Way",
     "city": "Richmond",
     "province": "BC",
     "postal_code": "V6X 3L7",
     "dealer_reg": "D50035",
+    "allowed_domain": "clutch.ca",
 }
+
+
+def init_db():
+    """Initialize SQLite database for settings."""
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS settings
+                 (key TEXT PRIMARY KEY, value TEXT)''')
+    conn.commit()
+    conn.close()
+
+
+def get_settings():
+    """Get all settings from database."""
+    init_db()
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute('SELECT key, value FROM settings')
+    rows = c.fetchall()
+    conn.close()
+    settings = DEFAULT_SETTINGS.copy()
+    for key, value in rows:
+        settings[key] = value
+    return settings
+
+
+def save_settings(new_settings):
+    """Save settings to database."""
+    init_db()
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    for key, value in new_settings.items():
+        c.execute('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', (key, value))
+    conn.commit()
+    conn.close()
+
+
+def get_purchaser():
+    """Get purchaser info from settings."""
+    settings = get_settings()
+    return {
+        "name": settings.get("company_name", ""),
+        "street": settings.get("street", ""),
+        "city": settings.get("city", ""),
+        "province": settings.get("province", ""),
+        "postal_code": settings.get("postal_code", ""),
+        "dealer_reg": settings.get("dealer_reg", ""),
+    }
+
+
+def login_required(f):
+    """Decorator to require login for routes."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+# Legacy PURCHASER variable for compatibility (now uses database)
+PURCHASER = DEFAULT_SETTINGS
 
 
 def extract_apv250_data(file_path: str) -> dict:
@@ -317,6 +397,9 @@ def extract_apv250_data(file_path: str) -> dict:
 
 def fill_apv9t(vehicle_data: dict, output_path: str, sale_date: str = None, form_data: dict = None) -> None:
     """Fill APV9T form with extracted vehicle data."""
+    # Get purchaser info from database settings
+    purchaser = get_purchaser()
+
     reader = PdfReader(str(APV9T_TEMPLATE))
     writer = PdfWriter()
     writer.clone_document_from_reader(reader)
@@ -350,13 +433,13 @@ def fill_apv9t(vehicle_data: dict, output_path: str, sale_date: str = None, form
         'province1': vehicle_data.get('owner_province', 'BC'),
         'sellerPostalcode': vehicle_data.get('owner_postal', ''),
 
-        # Purchaser Information
-        'purchaserNameLine1': PURCHASER['name'],
-        'purchaserAddressLine1': PURCHASER['street'],
-        'purchaserAddressLine2': PURCHASER['city'],
-        'province2': PURCHASER['province'],
-        'purchaserPostalcode': PURCHASER['postal_code'],
-        'dealerRegNo': PURCHASER['dealer_reg'],
+        # Purchaser Information (from settings)
+        'purchaserNameLine1': purchaser['name'],
+        'purchaserAddressLine1': purchaser['street'],
+        'purchaserAddressLine2': purchaser['city'],
+        'province2': purchaser['province'],
+        'purchaserPostalcode': purchaser['postal_code'],
+        'dealerRegNo': purchaser['dealer_reg'],
 
         # Duplicate fields for other copies
         'registrationNumberA': vehicle_data.get('registration_number', ''),
@@ -376,12 +459,12 @@ def fill_apv9t(vehicle_data: dict, output_path: str, sale_date: str = None, form
         'sellerAddressLine3A': vehicle_data.get('owner_city', ''),
         'province1A': vehicle_data.get('owner_province', 'BC'),
         'sellerPostalcodeA': vehicle_data.get('owner_postal', ''),
-        'purchaserNameLine1A': PURCHASER['name'],
-        'purchaserAddressLine1A': PURCHASER['street'],
-        'purchaserAddressLine2A': PURCHASER['city'],
-        'province2A': PURCHASER['province'],
-        'purchaserPostalcodeA': PURCHASER['postal_code'],
-        'dealerRegNoA': PURCHASER['dealer_reg'],
+        'purchaserNameLine1A': purchaser['name'],
+        'purchaserAddressLine1A': purchaser['street'],
+        'purchaserAddressLine2A': purchaser['city'],
+        'province2A': purchaser['province'],
+        'purchaserPostalcodeA': purchaser['postal_code'],
+        'dealerRegNoA': purchaser['dealer_reg'],
     }
 
     # Add optional form fields if provided
@@ -458,8 +541,86 @@ def fill_apv9t(vehicle_data: dict, output_path: str, sale_date: str = None, form
 
 
 @app.route('/')
+@login_required
 def index():
     return render_template('index.html')
+
+
+@app.route('/login')
+def login():
+    """Show login page."""
+    if 'user' in session:
+        return redirect(url_for('index'))
+    error = request.args.get('error')
+    return render_template('login.html', error=error)
+
+
+@app.route('/login/google')
+def login_google():
+    """Initiate Google OAuth login."""
+    # Check if OAuth is configured
+    if not os.environ.get('GOOGLE_CLIENT_ID'):
+        # Development mode - auto login
+        session['user'] = {'email': 'dev@clutch.ca', 'name': 'Developer'}
+        return redirect(url_for('index'))
+    redirect_uri = url_for('auth_callback', _external=True)
+    return google.authorize_redirect(redirect_uri)
+
+
+@app.route('/auth/callback')
+def auth_callback():
+    """Handle Google OAuth callback."""
+    try:
+        token = google.authorize_access_token()
+        user_info = token.get('userinfo')
+        if not user_info:
+            user_info = google.get('https://openidconnect.googleapis.com/v1/userinfo').json()
+
+        email = user_info.get('email', '')
+        settings = get_settings()
+        allowed_domain = settings.get('allowed_domain', 'clutch.ca')
+
+        # Check email domain
+        if not email.endswith('@' + allowed_domain):
+            return redirect(url_for('login', error=f'Only @{allowed_domain} accounts can sign in'))
+
+        session['user'] = {
+            'email': email,
+            'name': user_info.get('name', email),
+        }
+        return redirect(url_for('index'))
+    except Exception as e:
+        return redirect(url_for('login', error='Login failed. Please try again.'))
+
+
+@app.route('/logout')
+def logout():
+    """Log out user."""
+    session.pop('user', None)
+    return redirect(url_for('login'))
+
+
+@app.route('/settings', methods=['GET', 'POST'])
+@login_required
+def settings():
+    """Settings page for dealer info."""
+    success = False
+    if request.method == 'POST':
+        new_settings = {
+            'company_name': request.form.get('company_name', ''),
+            'street': request.form.get('street', ''),
+            'city': request.form.get('city', ''),
+            'province': request.form.get('province', ''),
+            'postal_code': request.form.get('postal_code', ''),
+            'dealer_reg': request.form.get('dealer_reg', ''),
+            'allowed_domain': request.form.get('allowed_domain', 'clutch.ca'),
+        }
+        save_settings(new_settings)
+        success = True
+
+    current_settings = get_settings()
+    user_email = session.get('user', {}).get('email', '')
+    return render_template('settings.html', settings=current_settings, user_email=user_email, success=success)
 
 
 @app.route('/health')
@@ -488,6 +649,7 @@ def health():
 
 
 @app.route('/upload', methods=['POST'])
+@login_required
 def upload():
     if 'file' not in request.files:
         return jsonify({'error': 'No file uploaded'}), 400
@@ -539,6 +701,7 @@ def upload():
 
 
 @app.route('/download/<filename>')
+@login_required
 def download(filename):
     file_path = app.config['UPLOAD_FOLDER'] / secure_filename(filename)
     if file_path.exists():
@@ -551,6 +714,7 @@ def download(filename):
 
 
 @app.route('/update-pdf', methods=['POST'])
+@login_required
 def update_pdf():
     """Update an existing PDF with manual field values."""
     data = request.get_json()
@@ -616,6 +780,7 @@ def update_pdf():
 
 
 @app.route('/process-check', methods=['POST'])
+@login_required
 def process_check():
     """Process form upload and return JSON with warnings for missing fields."""
     if 'file' not in request.files:
@@ -691,6 +856,7 @@ def process_check():
 
 
 @app.route('/process', methods=['POST'])
+@login_required
 def process():
     """Process form upload and return filled PDF directly."""
     if 'file' not in request.files:
