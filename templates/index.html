@@ -196,28 +196,35 @@
             <form id="uploadForm" enctype="multipart/form-data">
                 <input type="file" name="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png" required>
 
-                <div style="display: flex; gap: 15px; margin-bottom: 18px;">
-                    <div style="flex: 1;">
-                        <label class="form-label">Date of Sale:</label>
-                        <input type="date" name="sale_date" id="sale_date" class="text-input">
-                    </div>
-                    <div style="flex: 1;">
-                        <label class="form-label">Selling Price <span class="optional">(optional)</span></label>
-                        <input type="text" name="selling_price" placeholder="$ e.g. 25000" class="text-input">
-                    </div>
+                <div class="form-group">
+                    <label class="form-label">Date of Sale:</label>
+                    <input type="date" name="sale_date" id="sale_date" class="text-input" style="width: 200px;">
                 </div>
 
-                <div class="form-group" style="margin-bottom: 12px;">
-                    <label class="form-label">Odometer <span class="optional">(optional)</span></label>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <input type="text" name="odometer" placeholder="e.g. 85000" class="text-input" style="width: 120px; margin: 0;">
-                        <label style="color: #555; font-size: 14px;"><input type="radio" name="odometer_unit" value="km" checked> km</label>
-                        <label style="color: #555; font-size: 14px;"><input type="radio" name="odometer_unit" value="miles"> miles</label>
+                <!-- Optional Fields Divider -->
+                <div style="display: flex; align-items: center; margin: 20px 0 15px 0;">
+                    <div style="flex: 1; height: 1px; background: #ddd;"></div>
+                    <span style="padding: 0 12px; color: #999; font-size: 13px;">Optional Fields</span>
+                    <div style="flex: 1; height: 1px; background: #ddd;"></div>
+                </div>
+
+                <div style="display: flex; gap: 15px; margin-bottom: 18px;">
+                    <div style="flex: 1;">
+                        <label class="form-label">Selling Price</label>
+                        <input type="text" name="selling_price" placeholder="$ e.g. 25000" class="text-input">
+                    </div>
+                    <div style="flex: 1;">
+                        <label class="form-label">Odometer</label>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="text" name="odometer" placeholder="e.g. 85000" class="text-input" style="width: 100px; margin: 0;">
+                            <label style="color: #555; font-size: 14px;"><input type="radio" name="odometer_unit" value="km" checked> km</label>
+                            <label style="color: #555; font-size: 14px;"><input type="radio" name="odometer_unit" value="miles"> mi</label>
+                        </div>
                     </div>
                 </div>
 
                 <div class="checkbox-group">
-                    <label class="form-label">Previous Vehicle History <span class="optional">(optional)</span></label>
+                    <label class="form-label">Previous Vehicle History</label>
                     <div class="checkbox-options">
                         <label><input type="checkbox" name="prev_history" value="none"> None</label>
                         <label><input type="checkbox" name="prev_history" value="rebuilt"> Rebuilt</label>
@@ -228,7 +235,7 @@
                 </div>
 
                 <div class="checkbox-group">
-                    <label class="form-label">Previously Registered Outside BC <span class="optional">(optional)</span></label>
+                    <label class="form-label">Previously Registered Outside BC </label>
                     <div class="radio-group">
                         <label><input type="radio" name="outside_bc" value="yes"> Yes</label>
                         <label><input type="radio" name="outside_bc" value="no"> No</label>
@@ -236,7 +243,7 @@
                 </div>
 
                 <div class="yes-no-group">
-                    <label class="form-label">Vehicle Damage Disclosure <span class="optional">(optional)</span></label>
+                    <label class="form-label">Vehicle Damage Disclosure </label>
                     <div class="yes-no-row">
                         <span class="yes-no-label">New vehicle damage exceeds 20%?</span>
                         <div class="yes-no-options">
